@@ -11,7 +11,8 @@ class User(db.Model):
     password = db.Column(db.String(20), nullable=False)
     groups = db.relationship("Group_to_user", backref="user")
     expenses = db.relationship("Expenses", backref="user")
-    payments = db.relationship("Payments", backref="user")
+    payer = db.relationship('Payments', backref='payer', lazy='dynamic', primaryjoin="User.userID == Payments.payerID")
+    receiver = db.relationship('Payments', backref='receiver', lazy='dynamic', primaryjoin="User.userID == Payments.receiverID")
     debts = db.relationship("Debts", backref="user")
 
     def __repr__(self):
@@ -34,11 +35,10 @@ class Group(db.Model):
     groupID = db.Column(db.Integer,unique=True, primary_key=True)
     group_name = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime) 
-    members = db.relationship("Group_to_user", backref="group")
+    members = db.relationship("Group_to_user")
     total_Amount = db.Column(db.Integer, nullable=False)
     expenses = db.Column(db.Integer, db.ForeignKey("expenses.expenseID"))
     
-
     def __repr__(self):
         return f'<Group {self.group_name}>'
 
@@ -58,7 +58,7 @@ class Group_to_user(db.Model):
     id = db.Column(db.Integer,unique=True, primary_key=True)
     userID = db.Column(db.Integer, db.ForeignKey("user.userID"))
     groupId = db.Column(db.Integer, db.ForeignKey("group.groupID"))
-    joined_at = created_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime)
 
 
     
@@ -72,12 +72,36 @@ class Group_to_user(db.Model):
             "Joined at": self.joined_at
         }
 
+class Group_payments(db.Model):
+    __tablename__ = "group_payments"
+    id = db.Column(db.Integer,unique=True, primary_key=True)
+    receiverID = db.Column(db.Integer, db.ForeignKey("user.userID"), nullable=False)
+    payerID = db.Column(db.Integer, db.ForeignKey("user.userID"), nullable=False)
+    groupID = db.Column(db.Integer, db.ForeignKey("group.groupID"), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    payed_at = db.Column(db.DateTime)
+    
+
+
+
+    
+    def __repr__(self):
+        return f'<Group_payments {self.id}>'
+
+    def serialize(self):
+        return {
+            "User": self.receiverID,
+            "Group": self.groupId,
+            
+        }
+
 
 class Payments(db.Model):
     __tablename__ = "payments"
     id = db.Column(db.Integer,unique=True, primary_key=True)
     debtID = db.Column(db.Integer, db.ForeignKey("debts.debtID"))
     payerID = db.Column(db.Integer, db.ForeignKey("user.userID"))
+    receiverID = db.Column(db.Integer, db.ForeignKey("user.userID"))
     amount = db.Column(db.Integer, nullable=False)
     payed_at = db.Column(db.DateTime)
     
@@ -164,7 +188,7 @@ class Objectives(db.Model):
     id=db.Column(db.Integer, unique=True, primary_key=True)
     groupID=db.Column(db.Integer, db.ForeignKey("group.groupID"))
     name=db.Column(db.String(20), nullable=False)
-    targetAmount=db.Column(db.Integer, nullable=False)
+    target_amount=db.Column(db.Integer, nullable=False)
     created_at=db.Column(db.DateTime)
     is_completed=db.Column(db.Boolean, nullable=False, default=False)
     

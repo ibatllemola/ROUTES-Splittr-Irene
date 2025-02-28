@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 6504d4964c00
+Revision ID: 0aa66bb42dd7
 Revises: 
-Create Date: 2025-02-27 10:28:31.626282
+Create Date: 2025-02-28 11:29:15.186124
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6504d4964c00'
+revision = '0aa66bb42dd7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -68,11 +68,24 @@ def upgrade():
     sa.PrimaryKeyConstraint('groupID'),
     sa.UniqueConstraint('groupID')
     )
+    op.create_table('group_payments',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('receiverID', sa.Integer(), nullable=False),
+    sa.Column('payerID', sa.Integer(), nullable=False),
+    sa.Column('groupID', sa.Integer(), nullable=False),
+    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('payed_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['groupID'], ['group.groupID'], ),
+    sa.ForeignKeyConstraint(['payerID'], ['user.userID'], ),
+    sa.ForeignKeyConstraint(['receiverID'], ['user.userID'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id')
+    )
     op.create_table('group_to_user',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('userID', sa.Integer(), nullable=True),
     sa.Column('groupId', sa.Integer(), nullable=True),
-    sa.Column('joined_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['groupId'], ['group.groupID'], ),
     sa.ForeignKeyConstraint(['userID'], ['user.userID'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -93,10 +106,12 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('debtID', sa.Integer(), nullable=True),
     sa.Column('payerID', sa.Integer(), nullable=True),
+    sa.Column('receiverID', sa.Integer(), nullable=True),
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('payed_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['debtID'], ['debts.debtID'], ),
     sa.ForeignKeyConstraint(['payerID'], ['user.userID'], ),
+    sa.ForeignKeyConstraint(['receiverID'], ['user.userID'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
@@ -120,6 +135,7 @@ def downgrade():
     op.drop_table('payments')
     op.drop_table('objectives')
     op.drop_table('group_to_user')
+    op.drop_table('group_payments')
     op.drop_table('group')
     op.drop_table('debts')
     op.drop_table('messages')
