@@ -18,16 +18,29 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.name}>'
 
+#    def serialize(self):
+#        return {
+#            "Name": self.name,
+#            "Email": self.email,
+#            "Groups": self.groups,
+#            "Expenses": self.expenses,
+#            "Debts": self.debts,
+#            "Payments": self.payments
+#            
+#        }
+
     def serialize(self):
         return {
+            "userID": self.userID,
             "Name": self.name,
             "Email": self.email,
-            "Groups": self.groups,
-            "Expenses": self.expenses,
-            "Debts": self.debts,
-            "Payments": self.payments
-            
+            "Groups": [group.serialize() for group in self.groups] if self.groups else [],
+            "Expenses": [expense.serialize() for expense in self.expenses] if self.expenses else [],
+            "Debts": [debt.serialize() for debt in self.debts] if self.debts else [],
+            "Payer": [payment.serialize() for payment in self.payer] if self.payer else [],
+            "Receiver": [payment.serialize() for payment in self.receiver] if self.receiver else []
         }
+
     
 
 class Group(db.Model):
@@ -36,40 +49,63 @@ class Group(db.Model):
     group_name = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime) 
     members = db.relationship("Group_to_user")
-    total_Amount = db.Column(db.Integer, nullable=False)
+    total_Amount = db.Column(db.Integer, nullable=False, default=0)
     expenses = db.Column(db.Integer, db.ForeignKey("expenses.expenseID"))
     
     def __repr__(self):
         return f'<Group {self.group_name}>'
 
+    #def serialize(self):
+    #    return {
+    #        "Id": self.groupID,
+    #        "Name": self.group_name,
+    #        "Members": self.members,
+    #        "Total Amount": self.total_Amount,
+    #        "Expenses": self.expenses
+    #        
+    #    }
+
     def serialize(self):
         return {
             "Id": self.groupID,
             "Name": self.group_name,
-            "Members": self.members,
+            "Members": [members.serialize() for members in self.members] if self.members else [],
             "Total Amount": self.total_Amount,
-            "Expenses": self.expenses
-            
+            "Expenses": self.expenses if self.expenses else None 
         }
-  
 
+#class Group_to_user(db.Model):
+#    __tablename__ = "group_to_user"
+#    id = db.Column(db.Integer,unique=True, primary_key=True)
+#    userID = db.Column(db.Integer, db.ForeignKey("user.userID"))
+#    groupId = db.Column(db.Integer, db.ForeignKey("group.groupID"))
+#    created_at = db.Column(db.DateTime)
+#
+#
+#    
+#    def __repr__(self):
+#        return f'<Group_to_user {self.id}>'
+#
+#    def serialize(self):
+#        return {
+#            "User": self.userID,
+#            "Group": self.groupId,
+#            "Joined at": self.joined_at
+#        }
+    
 class Group_to_user(db.Model):
     __tablename__ = "group_to_user"
-    id = db.Column(db.Integer,unique=True, primary_key=True)
+    id = db.Column(db.Integer, unique=True, primary_key=True)
     userID = db.Column(db.Integer, db.ForeignKey("user.userID"))
     groupId = db.Column(db.Integer, db.ForeignKey("group.groupID"))
-    created_at = db.Column(db.DateTime)
-
-
-    
+    created_at = db.Column(db.DateTime) #no lo quiero tocar de momento, pero cambiar por joined at, no sé si influye en ningún otro modelo
     def __repr__(self):
         return f'<Group_to_user {self.id}>'
-
     def serialize(self):
         return {
             "User": self.userID,
             "Group": self.groupId,
-            "Joined at": self.joined_at
+            "Joined at": self.created_at 
         }
 
 class Group_payments(db.Model):
@@ -81,9 +117,6 @@ class Group_payments(db.Model):
     amount = db.Column(db.Integer, nullable=False)
     payed_at = db.Column(db.DateTime)
     
-
-
-
     
     def __repr__(self):
         return f'<Group_payments {self.id}>'
@@ -91,8 +124,7 @@ class Group_payments(db.Model):
     def serialize(self):
         return {
             "User": self.receiverID,
-            "Group": self.groupId,
-            
+            "Group": self.groupId,            
         }
 
 
@@ -135,7 +167,6 @@ class Expenses(db.Model):
             "Group": self.groupID,
             "Amount": self.amount,
             "Description": self.description,
-            
         }
     
 class Debts(db.Model):
@@ -148,8 +179,6 @@ class Debts(db.Model):
     payed_at=db.Column(db.DateTime)
     payments = db.relationship("Payments", backref="debts")
     
-    
-
 
     def __repr__(self):
         return f'<Debts {self.debtID}>'
